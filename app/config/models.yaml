@@ -1,10 +1,30 @@
-grammar_clarity:
-  mode: "local"        # local or remote
-  model: "small-grammar"
+routing:
+  strategy: "cost_first"
+  force_provider: null
+  max_chars_local: 8000
 
-style_content:
-  mode: "remote"
-  model: "gpt-5"
+providers:
+  openai:
+    enabled: true
+    model: "gpt-4o-mini"
+    api_key_env: "OPENAI_API_KEY"
+    est_cost_per_1k_chars: 0.002
 
-target_mode:
-  default: "audience"  # or "seo"
+  anthropic:
+    enabled: true
+    model: "claude-3-5-sonnet-latest"
+    api_key_env: "ANTHROPIC_API_KEY"
+    est_cost_per_1k_chars: 0.003
+
+  hf:
+    enabled: true
+    model: "HuggingFaceH4/zephyr-7b-beta"
+    api_key_env: "HF_API_KEY"
+    est_cost_per_1k_chars: 0.0005
+    endpoint: "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta"
+
+  ollama:
+    enabled: true
+    model: "qwen2.5:7b-instruct"
+    host: "http://localhost:11434"
+    est_cost_per_1k_chars: 0.0

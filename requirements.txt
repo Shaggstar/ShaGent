@@ -1,5 +1,9 @@
-pydantic>=2.8
-typer>=0.12
-rich>=13.7
-pandas>=2.2
-pyyaml>=6.0
+fastapi
+uvicorn
+pydantic
+pandas
+pyyaml
+rich
+typer
+requests
+icalendar

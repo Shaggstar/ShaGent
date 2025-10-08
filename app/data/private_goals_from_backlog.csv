@@ -1,0 +1,28 @@
+domain,objective,key_result,task,priority,complexity,current_skill,target_skill,status,priority_num,complexity_num,effort_points,energy,time_of_day,minutes,categories
+PRODUCT LEADERSHIP,Discovery Engine (PM),Launch AI-powered scientific discovery platform,Complete LinkedIn marketing campaign (12-week series),P0,High,7,9,In Progress,1,2.5,7.5,high,morning,120,Career
+PRODUCT LEADERSHIP,Discovery Engine (PM),Build knowledge graph architecture,Implement gap detection algorithms,P0,High,6,9,Planning,1,2.5,10.0,high,morning,120,Career
+PRODUCT LEADERSHIP,Discovery Engine (PM),Establish product-market fit,Develop protocol generation feature,P1,Medium,8,9,Not Started,2,1.75,3.5,medium,morning,100,Career
+PRODUCT LEADERSHIP,Better Self App,Create integrated productivity ecosystem,Complete functional development plan,P1,High,7,8,In Progress,2,2.5,5.0,medium,morning,120,Career
+PRODUCT LEADERSHIP,Better Self App,Implement AI-driven habit formation,Build habit tracking with Active Inference principles,P2,High,5,8,Planning,3,2.5,10.0,high,morning,120,"Career,Research"
+PRODUCT LEADERSHIP,Better Self App,Design narrative-based motivation system,Integrate MOH framework into UX,P2,Medium,6,8,Not Started,3,1.75,5.25,medium,morning,120,Career
+RESEARCH & THEORY,Active Inference Fellow,Complete TMS computational simulation,Code hierarchical model selection module,P0,Very High,4,8,In Progress,1,3.5,17.5,high,morning,120,Research
+RESEARCH & THEORY,Active Inference Fellow,Validate MOH through empirical testing,Design behavioral prediction experiments,P1,High,5,8,Planning,2,2.5,10.0,high,morning,120,Research
+RESEARCH & THEORY,Active Inference Fellow,Bridge theory to application,Create API for Active Inference models,P2,High,3,7,Not Started,3,2.5,12.5,high,morning,120,Research
+RESEARCH & THEORY,Narrative Research,Develop cultural cohesion framework,"Write ""Narrative-Cultural-Cohesion"" paper",P1,Medium,6,8,In Progress,2,1.75,5.25,medium,morning,120,"Writing,Research"
+RESEARCH & THEORY,Narrative Research,Map civilization's story through Active Inference,"Complete ""Story of Civilization"" framework",P2,High,5,8,In Progress,3,2.5,10.0,high,morning,120,Research
+CREATIVE EXPRESSION,Poetry Book,"Complete ""Humanity's Story"" collection",Write 2 poems per week following syllabus,P0,Medium,6,9,Active,1,1.75,7.0,high,midday,120,Writing
+CREATIVE EXPRESSION,Poetry Book,Master classical forms,"Daily practice: iambic pentameter, heroic couplets",P0,Low,5,8,Day 5/28,1,1.0,4.0,medium,midday,100,Writing
+CREATIVE EXPRESSION,Poetry Book,Build audience through Substack,Publish weekly poetry with MOH insights,P1,Low,6,7,Active,2,1.0,2.0,low,midday,50,Writing
+CREATIVE EXPRESSION,Screenwriting,Develop narrative craft for tech storytelling,4 hours weekly study (per syllabus),P2,Medium,4,7,Active,3,1.75,7.0,high,midday,120,Writing
+CREATIVE EXPRESSION,Drama Studies,Understand tragedy's role in human development,Complete Greek Tragedy lectures,P2,Low,3,6,Active,3,1.0,4.0,medium,midday,100,Writing
+CREATIVE EXPRESSION,Rap/Pop Culture,Create accessible entry points for complex ideas,Write monthly rap on scientific concepts,P3,Low,5,7,Not Started,4,1.0,3.0,medium,midday,75,Writing
+CAREER ADVANCEMENT,Job Search,Secure senior PM role aligned with research,Apply to 20 targeted positions,P0,Medium,8,9,Active,1,1.75,3.5,medium,afternoon,100,Career
+CAREER ADVANCEMENT,Communication Skills,Master technical storytelling,Practice STAR method daily,P1,Low,7,9,Active,2,1.0,3.0,medium,afternoon,75,
+CAREER ADVANCEMENT,Interview Prep,Excel at system design interviews,Complete PM interview course,P1,Medium,7,9,Planning,2,1.75,5.25,medium,afternoon,120,Career
+CAREER ADVANCEMENT,Network Building,Establish thought leadership,Post 3x weekly on AI/research topics,P2,Low,6,8,Active,3,1.0,3.0,medium,afternoon,75,"Career,Research"
+CAREER ADVANCEMENT,Company Research,Target alignment opportunities,Deep dive on mission-aligned organizations,P1,Low,8,9,In Progress,2,1.0,2.0,low,afternoon,50,"Career,Research"
+PERSONAL DEVELOPMENT,Mental Health,Optimize cognitive performance,Continue therapeutic practices,P0,Low,7,8,Active,1,1.0,2.0,low,evening,50,"Writing,Mental Health,Career"
+PERSONAL DEVELOPMENT,Religion & Metaphysics,Develop coherent worldview,Weekly philosophical writing,P2,Medium,6,8,Active,3,1.75,5.25,medium,evening,120,Career
+PERSONAL DEVELOPMENT,Journaling,Maintain self-awareness practice,Morning pages + evening reflection,P1,Low,7,9,Active,2,1.0,3.0,medium,evening,75,Career
+PERSONAL DEVELOPMENT,Goal Integration,Create reminder/accountability system,Build goal dashboard in Better Self,P1,Low,5,7,Planning,2,1.0,3.0,medium,evening,75,Career
+PERSONAL DEVELOPMENT,Habit Formation,Establish sustainable routines,Track via Better Self prototype,P1,Low,6,8,Active,2,1.0,3.0,medium,evening,75,Career

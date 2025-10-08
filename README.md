@@ -1,6 +1,6 @@
-# ShAgent — Better Self App
+# ShAgent / Better Self App
 
-A self-optimization system that uses AI to make you better, not weaker. ShAgent helps you set goals, track mastery, focus deeply, and grow a personal knowledge graph. It works with Obsidian for writing and note-taking, and includes a schedule optimizer, agile rituals, and optional sensor-based feedback. Privacy first by default.
+A self-optimization system that uses AI to help you. It allows you to set, dynamically aggregate, and achieve your goals, track mastery, focus deeply, and grow a personal knowledge graph. It works with Obsidian for writing and note-taking, and includes a schedule optimizer, agile rituals, and optional sensor-based feedback. Privacy first by default.
 
 ## Why this exists
 

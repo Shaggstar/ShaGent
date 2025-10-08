@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Attention</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 20px; }
+    video { width: 360px; height: 270px; background: #111; border-radius: 8px; }
+    .score { font-size: 24px; margin-top: 10px; }
+    .nudge { margin-top: 10px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Attention</h1>
+  <video id="cam" autoplay playsinline></video>
+  <div class="score">Score: <span id="s">0.00</span></div>
+  <div class="nudge" id="nudge">Waiting...</div>
+
+<script>
+const video = document.getElementById("cam");
+const scoreEl = document.getElementById("s");
+const nudgeEl = document.getElementById("nudge");
+
+let lastMove = Date.now();
+let baseline = 0.4;
+
+["mousemove", "keydown", "click", "scroll", "touchstart"].forEach(eventName => {
+  window.addEventListener(eventName, () => { lastMove = Date.now(); }, { passive: true });
+});
+
+async function initCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    video.srcObject = stream;
+    baseline = 0.6;
+  } catch (err) {
+    baseline = 0.4;
+  }
+}
+initCamera();
+
+async function tick() {
+  const idleMs = Date.now() - lastMove;
+  const activity = Math.max(0, Math.min(1, 1 - (idleMs - 5000) / 40000));
+  const score = Math.max(0, Math.min(1, baseline * 0.7 + activity * 0.3));
+
+  scoreEl.textContent = score.toFixed(2);
+
+  try {
+    const response = await fetch("/api/state/attention", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ score })
+    });
+    const data = await response.json();
+    if (data && data.nudge) {
+      nudgeEl.textContent = data.nudge;
+    }
+  } catch (err) {
+    // ignore network errors, retry next tick
+  }
+
+  setTimeout(tick, 3000);
+}
+tick();
+</script>
+</body>
+</html>
