@@ -1,0 +1,9 @@
+{
+  "id": "shagent-coach",
+  "name": "ShAgent Coach",
+  "version": "0.0.1",
+  "minAppVersion": "1.5.0",
+  "description": "Writing coach with six-layer feedback",
+  "author": "Shagor Rahman",
+  "isDesktopOnly": false
+}

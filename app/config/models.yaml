@@ -1,0 +1,10 @@
+grammar_clarity:
+  mode: "local"        # local or remote
+  model: "small-grammar"
+
+style_content:
+  mode: "remote"
+  model: "gpt-5"
+
+target_mode:
+  default: "audience"  # or "seo"

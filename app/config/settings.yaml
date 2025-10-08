@@ -1,0 +1,19 @@
+app:
+  timezone: "America/New_York"
+  privacy_first: true
+
+models:
+  provider: "openai"   # or "local"
+  local:
+    enabled: false
+    endpoint: "http://localhost:11434"
+  remote:
+    enabled: true
+    api_key_env: "LLM_API_KEY"
+
+scheduling:
+  focus_block_minutes: 50
+  short_break_minutes: 10
+  long_break_minutes: 25
+  workday_start: "09:00"
+  workday_end: "17:30"

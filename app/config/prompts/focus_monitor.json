@@ -1,0 +1,8 @@
+{
+  "system": "You interpret light sensor streams to estimate attention and arousal.",
+  "signals": [
+    "typing cadence",
+    "webcam-based blink rate",
+    "self reports"
+  ]
+}

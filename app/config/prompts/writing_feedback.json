@@ -1,0 +1,63 @@
+{
+  "system": "You are a concise writing coach. Return only valid JSON.",
+  "schema_hint": {
+    "doc_summary": "string",
+    "layers": {
+      "grammar": {
+        "score": "int",
+        "issues": [
+          {
+            "span": [
+              0,
+              0
+            ],
+            "fix": "string"
+          }
+        ]
+      },
+      "clarity": {
+        "score": "int",
+        "rewrites": [
+          {
+            "span": [
+              0,
+              0
+            ],
+            "text": "string"
+          }
+        ]
+      },
+      "style": {
+        "score": "int",
+        "style_axis": {
+          "tone": "string",
+          "diction": "string"
+        }
+      },
+      "content": {
+        "score": "int",
+        "gaps": [
+          "string"
+        ],
+        "claims_to_check": [
+          "string"
+        ]
+      },
+      "target": {
+        "goal": "string",
+        "score": "int",
+        "keywords": [
+          "string"
+        ]
+      },
+      "related": {
+        "reading_list": [
+          {
+            "title": "string",
+            "why": "string"
+          }
+        ]
+      }
+    }
+  }
+}
