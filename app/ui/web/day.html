@@ -1,271 +1,1175 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Better Day</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 16px; max-width: 640px; }
-    h1 { margin-bottom: 8px; }
-    section { margin-bottom: 24px; }
-    label { display: block; margin: 6px 0; }
-    input, textarea, select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; }
-    textarea { min-height: 80px; font-family: monospace; }
-    button { padding: 10px 16px; border-radius: 6px; border: none; background: #0d6efd; color: #fff; margin-right: 8px; margin-top: 8px; }
-    button:active { opacity: 0.85; }
-    ul { list-style: none; padding: 0; }
-    ul li { padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 6px; }
-    #nudge { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; margin-top: 8px; }
-    .score { font-size: 28px; font-weight: 600; }
-    video { width: 100%; max-width: 360px; border-radius: 8px; background: #111; margin-top: 12px; }
-    small { color: #666; display: block; margin-top: 4px; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #101214; color: #e6e6e6; }
-      input, textarea, select { background: #1b1d21; color: inherit; border-color: #333; }
-      ul li { border-color: #333; }
-      #nudge { border-color: #333; background: #1b1d21; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Better Day Dashboard</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f3f5ff;
+            --card-bg: #ffffff;
+            --primary: #4f46e5;
+            --primary-soft: #eef2ff;
+            --accent: #7c3aed;
+            --text-main: #1f2937;
+            --text-soft: #6b7280;
+            --success: #16a34a;
+            --warning: #f97316;
+            --danger: #ef4444;
+            --shadow: 0 20px 40px rgba(79, 70, 229, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-main);
+            padding: 32px 20px 80px;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .top-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .greeting {
+            text-align: right;
+        }
+
+        .greeting .hello {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .greeting .date {
+            font-size: 0.9rem;
+            color: var(--text-soft);
+        }
+
+        .quote-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .quote-mark {
+            font-size: 42px;
+            line-height: 1;
+            color: #c7d2fe;
+        }
+
+        .quote-content p {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .quote-author {
+            display: block;
+            margin-top: 6px;
+            color: var(--text-soft);
+            font-size: 0.95rem;
+        }
+
+        .dashboard-grid {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-top: 28px;
+        }
+
+        .grid-main {
+            flex: 2 1 640px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .grid-side {
+            flex: 1 1 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .card-meta {
+            font-size: 0.9rem;
+            color: var(--text-soft);
+        }
+
+        .priority-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .priority-item {
+            background: var(--primary-soft);
+            border-radius: 14px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            border: 2px solid transparent;
+        }
+
+        .priority-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px rgba(79, 70, 229, 0.08);
+            border-color: rgba(79, 70, 229, 0.25);
+        }
+
+        .priority-item.completed {
+            opacity: 0.55;
+            text-decoration: line-through;
+        }
+
+        .priority-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .status-dot.ready { background: var(--success); }
+        .status-dot.needs-info { background: var(--warning); }
+        .status-dot.in-progress { background: var(--accent); }
+        .status-dot.completed { background: var(--primary); opacity: 0.4; }
+
+        .priority-text {
+            flex: 1;
+        }
+
+        .priority-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .priority-meta {
+            margin-top: 2px;
+            font-size: 0.9rem;
+            color: var(--text-soft);
+        }
+
+        .priority-time {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .priority-alert {
+            font-size: 0.85rem;
+            color: var(--warning);
+        }
+
+        .context-panel {
+            background: #eef2ff;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #c7d2fe;
+        }
+
+        .context-panel strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--primary);
+        }
+
+        .context-input {
+            width: 100%;
+            margin-top: 6px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #c7d2fe;
+            font-size: 0.9rem;
+        }
+
+        .context-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .context-submit {
+            background: var(--accent);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(124, 58, 237, 0.2);
+        }
+
+        .context-submit:hover {
+            opacity: 0.9;
+        }
+
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(79, 70, 229, 0.02));
+            border-radius: 14px;
+            padding: 14px 18px;
+        }
+
+        .schedule-info h3 {
+            font-size: 0.98rem;
+            font-weight: 600;
+        }
+
+        .schedule-info span {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-soft);
+            margin-top: 2px;
+        }
+
+        .schedule-duration {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .stat-tiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+        }
+
+        .tile {
+            background: #f8f9ff;
+            border-radius: 18px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .tile-label {
+            font-size: 0.85rem;
+            color: var(--text-soft);
+        }
+
+        .tile-value {
+            display: block;
+            margin-top: 6px;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .tile-sub {
+            font-size: 0.75rem;
+            color: var(--text-soft);
+            margin-top: 4px;
+        }
+
+        .attention-card video {
+            width: 100%;
+            border-radius: 16px;
+            background: #111;
+            margin-top: 16px;
+            max-height: 200px;
+            object-fit: cover;
+        }
+
+        .attention-body {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .attention-score {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .status-pill {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .nudge {
+            background: #fff7ed;
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid #fdba74;
+        }
+
+        .nudge h3 {
+            font-size: 0.95rem;
+            color: #c2410c;
+            margin-bottom: 4px;
+        }
+
+        .nudge p {
+            font-size: 0.9rem;
+            color: #9a3412;
+            line-height: 1.4;
+        }
+
+        .warning {
+            background: #fef3c7;
+            border-radius: 12px;
+            padding: 12px;
+            color: #92400e;
+            font-weight: 600;
+            border: 1px solid #fcd34d;
+        }
+
+        .quick-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quick-list li {
+            background: #f8f9ff;
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .quick-list li span {
+            color: var(--text-soft);
+            font-size: 0.8rem;
+        }
+
+        .action-row {
+            margin-top: 32px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .primary-btn,
+        .secondary-btn,
+        .ghost-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 12px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.25);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+
+        .secondary-btn {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .secondary-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .ghost-btn {
+            background: rgba(255,255,255,0.65);
+            color: var(--text-soft);
+            border: 1px solid #e5e7eb;
+        }
+
+        .ghost-btn:hover {
+            color: var(--primary);
+            border-color: #c7d2fe;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .pulse {
+            animation: pulse 1.2s ease-out 2;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { transform: scale(1.01); box-shadow: 0 0 0 12px rgba(79, 70, 229, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+
+        @media (max-width: 960px) {
+            .dashboard-grid {
+                flex-direction: column;
+            }
+            .grid-side {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 20px 16px 60px;
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            .greeting {
+                text-align: left;
+            }
+            .quote-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .priority-item {
+                padding: 14px;
+            }
+            .action-row {
+                justify-content: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Better Day</h1>
-  <div class="score">Attention: <span id="attention-score">0.00</span></div>
-  <video id="cam" autoplay playsinline muted></video>
-  <div id="nudge">Waiting for nudge...</div>
-  <div>
-    <button id="btn-nudge">Nudge</button>
-    <button id="btn-plan">Plan</button>
-    <button id="btn-checkin">Check-in</button>
-  </div>
+    <div class="page">
+        <header class="top-bar">
+            <div class="brand">Better Day</div>
+            <div class="top-meta">
+                <div class="greeting">
+                    <span class="hello" id="greetingText">Good morning!</span>
+                    <span class="date" id="currentDate"></span>
+                </div>
+                <button id="cameraToggle" class="ghost-btn">Disable Camera</button>
+            </div>
+        </header>
 
-  <section>
-    <h2>Plan Focus Blocks</h2>
-    <label>
-      ICS URL (optional)
-      <input id="ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/.../basic.ics">
-    </label>
-    <label>
-      Day start
-      <input id="day-start" type="time" value="09:00">
-    </label>
-    <label>
-      Day end
-      <input id="day-end" type="time" value="17:30">
-    </label>
-    <label>
-      Energy curve (JSON)
-      <textarea id="energy-curve">{ "09:00": 0.7, "10:00": 0.85, "11:00": 0.9, "13:00": 0.7, "15:00": 0.6 }</textarea>
-      <small>Map of clock hour to energy level. Adjust to taste.</small>
-    </label>
-    <label>
-      Tasks (one per line: title|minutes|energy|priority)
-      <textarea id="tasks">Draft poem|50|high|1
-Meditate|15|low|2
-Outreach emails|40|medium|1</textarea>
-    </label>
-    <div id="plan-status"></div>
-  </section>
+        <section class="quote-card">
+            <div class="quote-mark">“</div>
+            <div class="quote-content">
+                <p id="quoteText">"The only way to do great work is to love what you do."</p>
+                <span class="quote-author">— Steve Jobs</span>
+            </div>
+        </section>
 
-  <section>
-    <h2>Today&apos;s Blocks</h2>
-    <ul id="plan-list"></ul>
-  </section>
+        <div class="dashboard-grid">
+            <div class="grid-main">
+                <section class="card priorities-card">
+                    <div class="card-header">
+                        <h2>Today's Priorities</h2>
+                        <span class="card-meta" id="progressSummary">0/0 completed</span>
+                    </div>
+                    <div class="priority-list" id="taskList"></div>
+                </section>
 
-  <section>
-    <h2>Quick Check-in</h2>
-    <label>
-      Task name
-      <input id="check-task" placeholder="Draft poem">
-    </label>
-    <label>
-      Completed?
-      <select id="check-done">
-        <option value="true">Yes</option>
-        <option value="false">Not yet</option>
-      </select>
-    </label>
-    <label>
-      Perceived difficulty (1 easy – 5 intense)
-      <input id="check-difficulty" type="number" min="1" max="5" value="3">
-    </label>
-    <label>
-      Mood (1 low – 5 high)
-      <input id="check-mood" type="number" min="1" max="5" value="3">
-    </label>
-    <div id="check-status"></div>
-  </section>
+                <section class="card schedule-card">
+                    <div class="card-header">
+                        <h2>Deep Work Schedule</h2>
+                        <span class="card-meta" id="scheduleMeta">Plan focus blocks around your energy</span>
+                    </div>
+                    <div class="schedule-list" id="scheduleList"></div>
+                </section>
+            </div>
 
-  <script>
-  const cam = document.getElementById("cam");
-  const attentionEl = document.getElementById("attention-score");
-  const nudgeEl = document.getElementById("nudge");
-  const planList = document.getElementById("plan-list");
-  const planStatus = document.getElementById("plan-status");
-  const checkStatus = document.getElementById("check-status");
+            <div class="grid-side">
+                <section class="card focus-card">
+                    <div class="card-header">
+                        <h2>Focus & Wellness</h2>
+                    </div>
+                    <div class="stat-tiles">
+                        <div class="tile">
+                            <span class="tile-label">Focus Time</span>
+                            <span class="tile-value" id="focusMinutesStat">0h 0m</span>
+                            <span class="tile-sub">of 4h goal</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Remaining</span>
+                            <span class="tile-value" id="focusRemainingStat">240m</span>
+                            <span class="tile-sub">until cap</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Completed Tasks</span>
+                            <span class="tile-value" id="tasksCompletedStat">0/0</span>
+                            <span class="tile-sub">ready for review</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Attention</span>
+                            <span class="tile-value" id="energyLevelStat">0%</span>
+                            <span class="tile-sub">live reading</span>
+                        </div>
+                    </div>
+                </section>
 
-  let lastMove = Date.now();
-  let baseline = 0.4;
+                <section class="card attention-card">
+                    <div class="card-header">
+                        <h2>Focus Monitor</h2>
+                        <span class="status-pill" id="statusText">Calibrating</span>
+                    </div>
+                    <div class="attention-body">
+                        <div class="attention-score" id="attentionScore">0.00</div>
+                        <video id="cameraFeed" autoplay playsinline muted></video>
+                        <div id="nudgeBox" class="nudge hidden">
+                            <h3>Suggestion</h3>
+                            <p id="nudgeText"></p>
+                        </div>
+                        <div id="focusWarning" class="warning hidden"></div>
+                    </div>
+                </section>
 
-  ["mousemove", "keydown", "click", "scroll", "touchstart"].forEach(eventName => {
-    window.addEventListener(eventName, () => { lastMove = Date.now(); }, { passive: true });
-  });
+                <section class="card quick-card">
+                    <div class="card-header">
+                        <h2>Quick Wins</h2>
+                    </div>
+                    <ul class="quick-list" id="quickList"></ul>
+                </section>
+            </div>
+        </div>
 
-  async function initCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      cam.srcObject = stream;
-      baseline = 0.6;
-    } catch {
-      baseline = 0.4;
-    }
-  }
-  initCamera();
+        <div class="action-row">
+            <button class="primary-btn" id="startDayBtn">🚀 Start My Day</button>
+            <button class="secondary-btn" id="smartNudgeBtn">💡 What Should I Do?</button>
+            <button class="ghost-btn" id="stopTaskBtn">🛑 Stop Current Task</button>
+        </div>
+    </div>
 
-  async function postAttention(score) {
-    try {
-      const response = await fetch("/api/state/attention", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score })
-      });
-      const data = await response.json();
-      if (data && data.nudge) {
-        nudgeEl.textContent = data.nudge;
-      }
-    } catch (err) {
-      console.warn("attention post failed", err);
-    }
-  }
-
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-  }
-
-  async function attentionTick() {
-    const idleMs = Date.now() - lastMove;
-    const activity = clamp(1 - (idleMs - 5000) / 40000, 0, 1);
-    const score = clamp(baseline * 0.7 + activity * 0.3, 0, 1);
-    attentionEl.textContent = score.toFixed(2);
-    await postAttention(score);
-    setTimeout(attentionTick, 3000);
-  }
-  attentionTick();
-
-  async function fetchNudge() {
-    try {
-      const response = await fetch("/api/nudge/next");
-      const data = await response.json();
-      if (data && data.suggestion) {
-        nudgeEl.textContent = `${data.suggestion} (${data.category || "focus"})`;
-      }
-    } catch (err) {
-      nudgeEl.textContent = "Nudge unavailable.";
-    }
-  }
-
-  function parseTasks(lines) {
-    const tasks = [];
-    lines.forEach(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return;
-      const parts = trimmed.split("|").map(part => part.trim());
-      if (parts.length < 4) return;
-      const [title, minutes, energy, priority] = parts;
-      tasks.push({
-        title,
-        minutes: Number(minutes) || 25,
-        energy: energy || "medium",
-        priority: Number(priority) || 3
-      });
-    });
-    return tasks;
-  }
-
-  async function planDay() {
-    planStatus.textContent = "";
-    const tasks = parseTasks(document.getElementById("tasks").value.split("\n"));
-    if (!tasks.length) {
-      planStatus.textContent = "Add at least one task.";
-      return;
-    }
-    let energyCurve = {};
-    const curveRaw = document.getElementById("energy-curve").value;
-    if (curveRaw.trim()) {
-      try {
-        energyCurve = JSON.parse(curveRaw);
-      } catch (err) {
-        planStatus.textContent = "Energy curve must be valid JSON.";
-        return;
-      }
-    }
-    const body = {
-      tasks,
-      day_start: document.getElementById("day-start").value || "09:00",
-      day_end: document.getElementById("day-end").value || "17:30",
-      energy_curve: energyCurve,
-      calendar_ics_url: document.getElementById("ics-url").value || null
+    <script>
+    const state = {
+        dashboard: null,
+        tasksById: {},
+        focusInfo: { total_minutes: 0, remaining_minutes: 240, max_minutes: 240, warning: false, limit_reached: false },
+        currentTaskId: null,
+        sessionStart: null,
+        lastActivity: Date.now(),
+        baselineAttention: 0.4,
+        cameraEnabled: false,
+        cameraStream: null,
+        nudgeTimeout: null,
     };
-    try {
-      const response = await fetch("/api/schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await response.json();
-      planList.innerHTML = "";
-      if (data && Array.isArray(data.plan)) {
-        if (!data.plan.length) {
-          planStatus.textContent = "No free slots available.";
-        }
-        data.plan.forEach(block => {
-          const li = document.createElement("li");
-          li.textContent = `${block.start.slice(11,16)} – ${block.end.slice(11,16)} • ${block.title}`;
-          planList.appendChild(li);
+
+    const dom = {
+        greetingText: document.getElementById("greetingText"),
+        currentDate: document.getElementById("currentDate"),
+        cameraToggle: document.getElementById("cameraToggle"),
+        taskList: document.getElementById("taskList"),
+        scheduleList: document.getElementById("scheduleList"),
+        scheduleMeta: document.getElementById("scheduleMeta"),
+        quickList: document.getElementById("quickList"),
+        focusMinutesStat: document.getElementById("focusMinutesStat"),
+        focusRemainingStat: document.getElementById("focusRemainingStat"),
+        tasksCompletedStat: document.getElementById("tasksCompletedStat"),
+        energyLevelStat: document.getElementById("energyLevelStat"),
+        progressSummary: document.getElementById("progressSummary"),
+        attentionScore: document.getElementById("attentionScore"),
+        statusText: document.getElementById("statusText"),
+        cameraFeed: document.getElementById("cameraFeed"),
+        nudgeBox: document.getElementById("nudgeBox"),
+        nudgeText: document.getElementById("nudgeText"),
+        focusWarning: document.getElementById("focusWarning"),
+        startDayBtn: document.getElementById("startDayBtn"),
+        smartNudgeBtn: document.getElementById("smartNudgeBtn"),
+        stopTaskBtn: document.getElementById("stopTaskBtn"),
+    };
+
+    function initGreeting() {
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? "Good morning!" : hour < 18 ? "Good afternoon!" : "Good evening!";
+        dom.greetingText.textContent = greeting;
+        dom.currentDate.textContent = new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
         });
-      } else {
-        planStatus.textContent = "Could not build plan.";
-      }
-    } catch (err) {
-      planStatus.textContent = "Planner failed. Check console.";
-      console.error(err);
     }
-  }
 
-  async function submitCheckin() {
-    checkStatus.textContent = "";
-    const payload = {
-      task: document.getElementById("check-task").value.trim(),
-      done: document.getElementById("check-done").value === "true",
-      perceived_difficulty: Number(document.getElementById("check-difficulty").value) || 3,
-      mood: Number(document.getElementById("check-mood").value) || 3
-    };
-    if (!payload.task) {
-      checkStatus.textContent = "Provide a task name.";
-      return;
-    }
-    try {
-      const response = await fetch("/api/checkin/daily", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (data && data.ok) {
-        checkStatus.textContent = data.updated ? "Logged and skill adjusted." : "Logged. Task not found in goals file.";
-      } else if (data && data.error) {
-        checkStatus.textContent = data.error;
-      } else {
-        checkStatus.textContent = "Check-in failed.";
-      }
-    } catch (err) {
-      checkStatus.textContent = "Check-in failed.";
-      console.error(err);
-    }
-  }
+    async function init() {
+        initGreeting();
+        dom.startDayBtn.addEventListener("click", startDay);
+        dom.smartNudgeBtn.addEventListener("click", () => smartSuggest(false));
+        dom.stopTaskBtn.addEventListener("click", () => stopCurrentTask(false));
+        dom.cameraToggle.addEventListener("click", toggleCamera);
 
-  document.getElementById("btn-nudge").addEventListener("click", fetchNudge);
-  document.getElementById("btn-plan").addEventListener("click", planDay);
-  document.getElementById("btn-checkin").addEventListener("click", submitCheckin);
-  </script>
+        ["mousemove", "keydown", "click", "scroll", "touchstart"].forEach(eventName => {
+            window.addEventListener(eventName, () => { state.lastActivity = Date.now(); }, { passive: true });
+        });
+
+        await refreshData();
+        await enableCamera();
+        attentionTick();
+        setInterval(refreshData, 60_000);
+    }
+
+    function formatMinutes(total) {
+        const minutes = Math.max(0, Math.round(total || 0));
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}h ${m}m`;
+    }
+
+    async function enableCamera() {
+        if (state.cameraEnabled) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            dom.cameraFeed.srcObject = stream;
+            state.cameraStream = stream;
+            state.cameraEnabled = true;
+            state.baselineAttention = 0.6;
+            dom.cameraFeed.classList.remove("hidden");
+            dom.cameraToggle.textContent = "Disable Camera";
+        } catch (err) {
+            console.warn("Camera unavailable", err);
+            state.cameraEnabled = false;
+            state.baselineAttention = 0.4;
+            dom.cameraFeed.classList.add("hidden");
+            dom.cameraToggle.textContent = "Enable Camera";
+        }
+    }
+
+    function disableCamera() {
+        if (state.cameraStream) {
+            state.cameraStream.getTracks().forEach(track => track.stop());
+            state.cameraStream = null;
+        }
+        state.cameraEnabled = false;
+        state.baselineAttention = 0.4;
+        dom.cameraFeed.srcObject = null;
+        dom.cameraFeed.classList.add("hidden");
+        dom.cameraToggle.textContent = "Enable Camera";
+    }
+
+    async function toggleCamera() {
+        if (state.cameraEnabled) {
+            disableCamera();
+        } else {
+            await enableCamera();
+        }
+    }
+
+    function updateAttentionStatus(score) {
+        if (score < 0.45) {
+            dom.statusText.textContent = "Needs Reset";
+            dom.statusText.style.background = "#fee2e2";
+            dom.statusText.style.color = "#b91c1c";
+        } else if (score > 0.75) {
+            dom.statusText.textContent = "Peak Focus";
+            dom.statusText.style.background = "#dcfce7";
+            dom.statusText.style.color = "#15803d";
+        } else {
+            dom.statusText.textContent = "On Track";
+            dom.statusText.style.background = "var(--primary-soft)";
+            dom.statusText.style.color = "var(--primary)";
+        }
+    }
+
+    async function attentionTick() {
+        const idleMs = Date.now() - state.lastActivity;
+        const activity = Math.max(0, Math.min(1, 1 - (idleMs - 5000) / 40000));
+        const score = Math.max(0, Math.min(1, state.baselineAttention * 0.7 + activity * 0.3));
+        dom.attentionScore.textContent = score.toFixed(2);
+        dom.energyLevelStat.textContent = `${Math.round(score * 100)}%`;
+        updateAttentionStatus(score);
+        try {
+            await fetch("/api/state/attention", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ score }),
+            });
+        } catch (_) {
+            // ignore network hiccups
+        }
+        setTimeout(attentionTick, 3000);
+    }
+
+    async function refreshData() {
+        try {
+            const response = await fetch("/api/today/organized");
+            state.dashboard = await response.json();
+            state.focusInfo = state.dashboard.focus_limit || state.focusInfo;
+            state.tasksById = {};
+            for (const [categoryKey, block] of Object.entries(state.dashboard.categories || {})) {
+                block.tasks.forEach(task => {
+                    state.tasksById[task.id] = { ...task, category_key: categoryKey };
+                });
+            }
+            renderTasks();
+            renderSchedule();
+            renderQuickWins();
+            updateStats();
+            updateFocusBanner();
+        } catch (err) {
+            console.error("Failed to refresh dashboard", err);
+            showNudge("Unable to sync tasks. Check your connection.");
+        }
+    }
+
+    function renderTasks() {
+        const container = dom.taskList;
+        container.innerHTML = "";
+        const tasks = Object.values(state.tasksById);
+        if (!tasks.length) {
+            container.innerHTML = `<div class="priority-item">No tasks on deck. Add one in your goals CSV.</div>`;
+            return;
+        }
+        tasks.sort((a, b) => a.priority - b.priority || a.minutes - b.minutes);
+        tasks.forEach(task => {
+            const item = document.createElement("div");
+            item.className = "priority-item";
+            item.dataset.taskId = task.id;
+            if (task.status === "completed") item.classList.add("completed");
+
+            const statusDot = document.createElement("div");
+            statusDot.className = `status-dot ${task.status}`;
+            statusDot.title = task.status === "completed" ? "Mark as ready" : "Toggle complete";
+            statusDot.addEventListener("click", event => {
+                event.stopPropagation();
+                toggleTask(task.id);
+            });
+
+            const main = document.createElement("div");
+            main.className = "priority-main";
+
+            const textWrap = document.createElement("div");
+            textWrap.className = "priority-text";
+            textWrap.innerHTML = `
+                <div class="priority-title">${task.title}</div>
+                <div class="priority-meta">${task.domain}${task.time_of_day ? ` • ${task.time_of_day}` : ""}</div>
+            `;
+
+            const time = document.createElement("div");
+            time.className = "priority-time";
+            time.textContent = `${task.minutes} min`;
+
+            main.appendChild(statusDot);
+            main.appendChild(textWrap);
+            main.appendChild(time);
+            item.appendChild(main);
+
+            if (task.status === "needs-info") {
+                const alert = document.createElement("div");
+                alert.className = "priority-alert";
+                alert.textContent = "Needs context before you start.";
+                item.appendChild(alert);
+            }
+
+            if (task.context_questions && task.context_questions.length) {
+                const contextBox = renderContextBox(task);
+                if (contextBox) item.appendChild(contextBox);
+            }
+
+            item.addEventListener("click", () => handleTaskClick(task.id));
+            container.appendChild(item);
+        });
+    }
+
+    function renderContextBox(task) {
+        const box = document.createElement("div");
+        box.className = "context-panel";
+        box.id = `context-box-${task.id}`;
+        if (task.status !== "needs-info") {
+            box.classList.add("hidden");
+        }
+        const intro = document.createElement("strong");
+        intro.textContent = "Capture quick context to make this task actionable:";
+        box.appendChild(intro);
+
+        task.context_questions.forEach((question, idx) => {
+            const label = document.createElement("div");
+            label.style.marginTop = "8px";
+            label.textContent = `${idx + 1}. ${question}`;
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "context-input";
+            input.id = `context-${task.id}-${idx}`;
+            input.value = task.saved_context?.[question] || "";
+            box.appendChild(label);
+            box.appendChild(input);
+        });
+
+        const actions = document.createElement("div");
+        actions.className = "context-actions";
+        const saveButton = document.createElement("button");
+        saveButton.className = "context-submit";
+        saveButton.textContent = "Save context";
+        saveButton.addEventListener("click", event => {
+            event.stopPropagation();
+            submitContext(task.id);
+        });
+        actions.appendChild(saveButton);
+        box.appendChild(actions);
+        box.addEventListener("click", event => event.stopPropagation());
+        return box;
+    }
+
+    function renderSchedule() {
+        const container = dom.scheduleList;
+        container.innerHTML = "";
+        const tasks = Object.values(state.tasksById);
+        const inProgress = tasks.filter(t => t.status === "in-progress");
+        const ready = tasks.filter(t => t.status === "ready");
+        const queue = [...inProgress, ...ready].slice(0, 4);
+
+        if (!queue.length) {
+            container.innerHTML = `<div class="schedule-item"><div class="schedule-info"><h3>No focus blocks scheduled</h3><span>Add one by gathering context or planning a task.</span></div><div class="schedule-duration">Plan</div></div>`;
+            dom.scheduleMeta.textContent = "Once tasks are ready, we'll line them up here.";
+            return;
+        }
+
+        let cumulativeMinutes = 0;
+        queue.forEach(task => {
+            const item = document.createElement("div");
+            item.className = "schedule-item";
+            const info = document.createElement("div");
+            info.className = "schedule-info";
+            info.innerHTML = `<h3>${task.title}</h3><span>${task.time_of_day || "Flexible focus block"} • ${task.energy.toUpperCase()} energy</span>`;
+            const duration = document.createElement("div");
+            duration.className = "schedule-duration";
+            duration.textContent = `${task.minutes} min`;
+            item.appendChild(info);
+            item.appendChild(duration);
+            item.addEventListener("click", () => handleTaskClick(task.id));
+            container.appendChild(item);
+            cumulativeMinutes += task.minutes;
+        });
+
+        dom.scheduleMeta.textContent = `${Math.max(state.focusInfo.remaining_minutes, 0)} min focus capacity remaining`;
+    }
+
+    function renderQuickWins() {
+        const list = dom.quickList;
+        list.innerHTML = "";
+        const needsContext = (state.dashboard?.needs_context || [])
+            .map(id => state.tasksById[id])
+            .filter(Boolean)
+            .slice(0, 3);
+
+        if (needsContext.length) {
+            needsContext.forEach(task => {
+                const item = document.createElement("li");
+                item.innerHTML = `<span>Gather context for <strong>${task.title}</strong></span><span>${task.context_questions.length} prompts</span>`;
+                item.addEventListener("click", () => {
+                    toggleContextBox(task.id, true);
+                    showNudge(`Answer the prompts for "${task.title}" to unlock the work.`);
+                });
+                list.appendChild(item);
+            });
+            return;
+        }
+
+        const ready = Object.values(state.tasksById)
+            .filter(task => task.status === "ready")
+            .slice(0, 3);
+        if (ready.length) {
+            ready.forEach(task => {
+                const item = document.createElement("li");
+                item.innerHTML = `<span>Start <strong>${task.title}</strong></span><span>${task.minutes} min block</span>`;
+                item.addEventListener("click", () => startTask(task.id));
+                list.appendChild(item);
+            });
+        } else {
+            list.innerHTML = `<li><span>You're all set! Take a moment to reset or add new goals.</span></li>`;
+        }
+    }
+
+    function updateStats() {
+        const tasks = Object.values(state.tasksById);
+        const completed = tasks.filter(t => t.status === "completed").length;
+        const total = tasks.length;
+        dom.progressSummary.textContent = `${completed}/${total || 0} completed`;
+        dom.tasksCompletedStat.textContent = `${completed}/${total || 0}`;
+        const focus = state.focusInfo.total_minutes || 0;
+        dom.focusMinutesStat.textContent = formatMinutes(focus);
+        const remaining = state.focusInfo.remaining_minutes ?? 0;
+        dom.focusRemainingStat.textContent = `${Math.max(0, remaining)}m`;
+    }
+
+    function updateFocusBanner() {
+        if (!dom.focusWarning) return;
+        if (state.focusInfo.limit_reached) {
+            dom.focusWarning.textContent = "🛑 You've reached 4 hours of deep focus today. Time to recharge.";
+            dom.focusWarning.classList.remove("hidden");
+        } else if (state.focusInfo.warning) {
+            dom.focusWarning.textContent = `⚠️ ${Math.max(0, state.focusInfo.remaining_minutes)} minutes of focus time remaining today.`;
+            dom.focusWarning.classList.remove("hidden");
+        } else {
+            dom.focusWarning.classList.add("hidden");
+        }
+    }
+
+    function toggleContextBox(taskId, forceOpen = false) {
+        const box = document.getElementById(`context-box-${taskId}`);
+        if (!box) return;
+        if (forceOpen) {
+            box.classList.remove("hidden");
+        } else {
+            box.classList.toggle("hidden");
+        }
+    }
+
+    async function submitContext(taskId) {
+        const task = state.tasksById[taskId];
+        if (!task) return;
+        const answers = {};
+        let missing = false;
+        task.context_questions.forEach((question, idx) => {
+            const input = document.getElementById(`context-${taskId}-${idx}`);
+            if (!input) return;
+            const value = input.value.trim();
+            if (!value) missing = true;
+            answers[question] = value;
+        });
+        if (missing) {
+            showNudge("Please answer each prompt so the task is truly ready.");
+            return;
+        }
+        try {
+            await fetch("/api/tasks/context", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ task_id: taskId, answers, timestamp: new Date().toISOString() }),
+            });
+            showNudge(`Context saved for “${task.title}”. You're ready to begin.`);
+            await refreshData();
+        } catch (err) {
+            console.error("Failed to save context", err);
+            showNudge("Unable to save context. Try again in a moment.");
+        }
+    }
+
+    function showNudge(message) {
+        if (!dom.nudgeBox) return;
+        dom.nudgeText.textContent = message;
+        dom.nudgeBox.classList.remove("hidden");
+        clearTimeout(state.nudgeTimeout);
+        state.nudgeTimeout = setTimeout(() => dom.nudgeBox.classList.add("hidden"), 10000);
+    }
+
+    async function toggleTask(taskId) {
+        const task = state.tasksById[taskId];
+        if (!task) return;
+        if (task.status === "completed") {
+            await setTaskStatus(taskId, "ready");
+            await refreshData();
+            return;
+        }
+        if (state.currentTaskId && state.currentTaskId !== taskId) {
+            await stopCurrentTask(false);
+        }
+        if (state.currentTaskId === taskId) {
+            await stopCurrentTask(true);
+        } else {
+            await setTaskStatus(taskId, "completed");
+            showNudge(`Great job! “${task.title}” is marked complete.`);
+            await refreshData();
+        }
+    }
+
+    async function setTaskStatus(taskId, status) {
+        try {
+            await fetch("/api/tasks/status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ task_id: taskId, status }),
+            });
+        } catch (err) {
+            console.error("Unable to update task status", err);
+            showNudge("Failed to update task. Check your connection.");
+        }
+    }
+
+    async function startTask(taskId) {
+        const task = state.tasksById[taskId];
+        if (!task) return;
+        if (task.status === "needs-info") {
+            toggleContextBox(taskId, true);
+            showNudge("Answer the prompts first, then hit start.");
+            return;
+        }
+        if (state.focusInfo.limit_reached) {
+            showNudge("Focus cap reached. Log a break before another block.");
+            return;
+        }
+        if (state.currentTaskId && state.currentTaskId !== taskId) {
+            await stopCurrentTask(false);
+        }
+        state.currentTaskId = taskId;
+        state.sessionStart = Date.now();
+        await setTaskStatus(taskId, "in-progress");
+        renderTasks();
+        showNudge(`Working on “${task.title}”. Protect the next ${task.minutes} minutes.`);
+    }
+
+    async function stopCurrentTask(markCompleted) {
+        if (!state.currentTaskId) return;
+        const task = state.tasksById[state.currentTaskId];
+        const elapsedMinutes = Math.max(1, Math.round((Date.now() - state.sessionStart) / 60000));
+        state.sessionStart = null;
+        const taskId = state.currentTaskId;
+        state.currentTaskId = null;
+        await recordFocus(elapsedMinutes, task);
+        await setTaskStatus(taskId, markCompleted ? "completed" : "ready");
+        if (markCompleted) {
+            showNudge(`Great work! “${task.title}” completed.`);
+        }
+        await refreshData();
+    }
+
+    async function recordFocus(minutes, task) {
+        try {
+            const response = await fetch("/api/focus/track", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    minutes,
+                    task_id: task?.id,
+                    task_title: task?.title,
+                }),
+            });
+            const data = await response.json();
+            state.focusInfo.total_minutes = data.total_today;
+            state.focusInfo.remaining_minutes = data.remaining;
+            state.focusInfo.warning = data.warning;
+            state.focusInfo.limit_reached = data.limit_reached;
+            updateStats();
+            updateFocusBanner();
+        } catch (err) {
+            console.error("Failed to record focus", err);
+        }
+    }
+
+    function handleTaskClick(taskId) {
+        const task = state.tasksById[taskId];
+        if (!task) return;
+        if (task.status === "needs-info") {
+            toggleContextBox(taskId, true);
+            return;
+        }
+        if (task.status === "completed") {
+            toggleTask(taskId);
+            return;
+        }
+        startTask(taskId);
+    }
+
+    async function startDay() {
+        await refreshData();
+        if (state.focusInfo.limit_reached) {
+            showNudge("You've hit the focus cap. Take a restorative break.");
+            return;
+        }
+        const needsContext = state.dashboard?.needs_context || [];
+        if (needsContext.length) {
+            toggleContextBox(needsContext[0], true);
+            showNudge("Start by answering the prompts for your top priority.");
+            return;
+        }
+        const suggestion = await smartSuggest(true);
+        if (suggestion && suggestion.action === "start_task" && suggestion.task_id) {
+            startTask(suggestion.task_id);
+        }
+    }
+
+    async function smartSuggest(autoStart) {
+        try {
+            const response = await fetch("/api/tasks/smart-suggest", { method: "POST" });
+            const suggestion = await response.json();
+            if (suggestion.message) {
+                showNudge(suggestion.message);
+            }
+            if (suggestion.action === "gather_context" && suggestion.task_id) {
+                toggleContextBox(suggestion.task_id, true);
+            }
+            if (!autoStart && suggestion.action === "start_task") {
+                highlightTask(suggestion.task_id);
+            }
+            return suggestion;
+        } catch (err) {
+            console.error("Unable to retrieve suggestion", err);
+            showNudge("Suggestion engine unavailable right now.");
+            return null;
+        }
+    }
+
+    function highlightTask(taskId) {
+        const element = dom.taskList.querySelector(`[data-task-id="${taskId}"]`);
+        if (element) {
+            element.classList.add("pulse");
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            setTimeout(() => element.classList.remove("pulse"), 2500);
+        }
+    }
+
+    init();
+    </script>
 </body>
 </html>

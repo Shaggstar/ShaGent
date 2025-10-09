@@ -1,19 +1,172 @@
 import json
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .calendar import fetch_busy_from_ics
+from .context_store import (
+    CONTEXT_QUESTIONS,
+    get_context_questions,
+    load_contexts,
+    save_contexts,
+)
 from .goals import categorize, load_goals, summarize
 from .llm_router import run as llm_run
 
 app = FastAPI(title="ShAgent Server")
 app.mount("/ui", StaticFiles(directory="app/ui/web", html=True), name="ui")
+
+FOCUS_MAX_MINUTES = 240  # four-hour cap
+
+CATEGORY_META = {
+    "career": {"emoji": "💼", "label": "Career"},
+    "writing": {"emoji": "✍️", "label": "Writing"},
+    "research": {"emoji": "🔬", "label": "Research / Active Inference"},
+    "mental health": {"emoji": "🧘", "label": "Mental Health"},
+    "learning": {"emoji": "📚", "label": "Learning"},
+}
+
+
+def _focus_log_path(date_label: Optional[str] = None) -> str:
+    label = date_label or datetime.now().date().isoformat()
+    return os.path.join("app", "data", f"focus_log_{label}.json")
+
+
+def _load_focus_log(date_label: Optional[str] = None) -> Dict[str, Any]:
+    path = _focus_log_path(date_label)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as handle:
+            try:
+                return json.load(handle)
+            except json.JSONDecodeError:
+                return {"total_minutes": 0, "sessions": []}
+    return {"total_minutes": 0, "sessions": []}
+
+
+def _save_focus_log(log: Dict[str, Any], date_label: Optional[str] = None) -> None:
+    path = _focus_log_path(date_label)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(log, handle, indent=2)
+
+
+def _focus_stats() -> Dict[str, Any]:
+    log = _load_focus_log()
+    total = int(log.get("total_minutes", 0))
+    remaining = max(0, FOCUS_MAX_MINUTES - total)
+    return {
+        "total_minutes": total,
+        "remaining_minutes": remaining,
+        "max_minutes": FOCUS_MAX_MINUTES,
+        "warning": remaining <= 30 and remaining > 0,
+        "limit_reached": remaining <= 0,
+    }
+
+
+def _canonical_category(raw: str) -> str:
+    if not raw:
+        return "general"
+    slug = raw.lower().strip()
+    if slug in CATEGORY_META:
+        return slug
+    if "career" in slug:
+        return "career"
+    if "write" in slug or "poetry" in slug:
+        return "writing"
+    if "research" in slug or "inference" in slug:
+        return "research"
+    if "mental" in slug or "health" in slug:
+        return "mental health"
+    if "learn" in slug or "study" in slug:
+        return "learning"
+    return slug
+
+
+def _task_status_from_context(
+    context_entry: Dict[str, Any],
+    questions: List[str],
+    domain: str,
+) -> str:
+    if context_entry.get("status") in {"needs-info", "ready", "in-progress", "completed"}:
+        return context_entry["status"]
+    if "Mental Health" in domain:
+        return "ready"
+    if questions and not context_entry.get("answers"):
+        return "needs-info"
+    return "ready"
+
+
+def _task_category_key(row: pd.Series) -> str:
+    raw = row.get("categories") or row.get("domain") or ""
+    first = raw.split(",")[0].strip()
+    return _canonical_category(first)
+
+
+def _task_payload(row: pd.Series, contexts: Dict[str, Any]) -> Dict[str, Any]:
+    task_id = int(row.name)
+    context_entry = contexts.get(str(task_id), {})
+    questions = get_context_questions(row.get("domain", ""), row.get("objective", ""))
+    status = row.get("task_status") or _task_status_from_context(
+        context_entry,
+        questions,
+        row.get("domain", ""),
+    )
+    return {
+        "id": task_id,
+        "title": row.get("task", ""),
+        "domain": f"{row.get('domain', '')} - {row.get('objective', '')}".strip(" -"),
+        "minutes": int(row.get("minutes", 60) or 60),
+        "energy": row.get("energy", "medium"),
+        "priority": int(row.get("priority_num", 3) or 3),
+        "time_of_day": row.get("time_of_day", ""),
+        "status": status,
+        "context_questions": questions,
+        "saved_context": context_entry.get("answers", {}),
+        "context_timestamp": context_entry.get("timestamp"),
+    }
+
+
+def _load_active_tasks() -> Dict[str, Any]:
+    df = load_goals()
+    df = categorize(df)
+    contexts = load_contexts()
+    active = df[df.get("status", "") != "Done"].copy()
+    energy_rank = {"high": 0, "medium": 1, "low": 2}
+    if "energy" in active.columns:
+        active["energy_rank"] = active["energy"].map(lambda val: energy_rank.get(str(val).lower(), 1)).fillna(1)
+    else:
+        active["energy_rank"] = 1
+    active["category_key"] = active.apply(_task_category_key, axis=1)
+    active["task_status"] = active.apply(
+        lambda row: _task_status_from_context(
+            contexts.get(str(row.name), {}),
+            get_context_questions(row.get("domain", ""), row.get("objective", "")),
+            row.get("domain", ""),
+        ),
+        axis=1,
+    )
+    active = active.sort_values(
+        by=["priority_num", "energy_rank", "minutes"],
+        ascending=[True, True, True],
+    )
+    return {"dataframe": active, "contexts": contexts}
+
+
+def _tasks_payload_list(active: pd.DataFrame, contexts: Dict[str, Any]) -> List[Dict[str, Any]]:
+    payloads: List[Dict[str, Any]] = []
+    for _, row in active.iterrows():
+        payload = _task_payload(row, contexts)
+        payload["category_key"] = row.get("category_key", "")
+        payload["domain_raw"] = row.get("domain", "")
+        payload["objective_raw"] = row.get("objective", "")
+        payloads.append(payload)
+    return payloads
+
 
 class WritingPayload(BaseModel):
     mode: str = "audience"
@@ -140,6 +293,23 @@ class AttentionPing(BaseModel):
 
 ATTENTION = {"last": 0.0}
 
+
+class TaskContext(BaseModel):
+    task_id: int
+    answers: Dict[str, str]
+    timestamp: Optional[str] = None
+
+
+class TaskStatusUpdate(BaseModel):
+    task_id: int
+    status: str  # expected: needs-info | ready | in-progress | completed
+
+
+class FocusTrackEntry(BaseModel):
+    minutes: int
+    task_id: Optional[int] = None
+    task_title: Optional[str] = None
+
 @app.post("/api/state/attention")
 def state_attention(ping: AttentionPing):
     ATTENTION["last"] = float(ping.score)
@@ -156,6 +326,232 @@ def calendar_busy(ics: str = Query(..., description="Google Calendar ICS URL")):
     blocks = fetch_busy_from_ics(ics)
     return [{"start": s.isoformat(), "end": e.isoformat(), "title": t} for s, e, t in blocks]
 
+@app.get("/api/today/organized")
+def today_organized():
+    state = _load_active_tasks()
+    active = state["dataframe"]
+    contexts = state["contexts"]
+    focus = _focus_stats()
+    payloads = _tasks_payload_list(active, contexts)
+
+    categories: Dict[str, Dict[str, Any]] = {}
+    needs_context, ready, in_progress, completed = [], [], [], []
+
+    for task in payloads:
+        category_key = (task.get("category_key") or "general").strip()
+        slug = category_key.replace(" ", "-")
+        meta = CATEGORY_META.get(category_key, {"emoji": "", "label": category_key.title()})
+        bucket = categories.setdefault(
+            slug,
+            {
+                "name": f"{meta.get('emoji', '')} {meta.get('label', category_key.title())}".strip(),
+                "tasks": [],
+            },
+        )
+        if len(bucket["tasks"]) < 5:
+            bucket["tasks"].append(task)
+
+        status = task.get("status")
+        if status == "needs-info":
+            needs_context.append(task)
+        elif status == "in-progress":
+            in_progress.append(task)
+        elif status == "completed":
+            completed.append(task)
+        else:
+            ready.append(task)
+
+    summary = {
+        "ready": len(ready),
+        "needs_context": len(needs_context),
+        "in_progress": len(in_progress),
+        "completed": len(completed),
+        "total": len(payloads),
+    }
+
+    return {
+        "categories": categories,
+        "focus_limit": focus,
+        "summary": summary,
+        "needs_context": [task["id"] for task in needs_context],
+        "ready_tasks": [task["id"] for task in ready],
+    }
+
+@app.get("/api/focus/remaining")
+def focus_remaining():
+    return _focus_stats()
+
+@app.post("/api/focus/track")
+def focus_track(entry: FocusTrackEntry):
+    if entry.minutes <= 0:
+        raise HTTPException(status_code=400, detail="minutes must be positive")
+    log = _load_focus_log()
+    log.setdefault("sessions", [])
+    log["total_minutes"] = int(log.get("total_minutes", 0)) + int(entry.minutes)
+    log["sessions"].append(
+        {
+            "timestamp": datetime.now().isoformat(),
+            "minutes": int(entry.minutes),
+            "task_id": entry.task_id,
+            "task_title": entry.task_title,
+        }
+    )
+    _save_focus_log(log)
+    stats = _focus_stats()
+    return {
+        "total_today": stats["total_minutes"],
+        "remaining": stats["remaining_minutes"],
+        "warning": stats["warning"],
+        "limit_reached": stats["limit_reached"],
+    }
+
+@app.post("/api/tasks/context")
+def save_task_context(context: TaskContext):
+    contexts = load_contexts()
+    entry = contexts.get(str(context.task_id), {})
+    entry["answers"] = context.answers
+    entry["timestamp"] = context.timestamp or datetime.now().isoformat()
+    entry["status"] = "ready"
+    contexts[str(context.task_id)] = entry
+    save_contexts(contexts)
+    return {"ok": True, "status": "ready"}
+
+@app.get("/api/tasks/context/{task_id}")
+def get_task_context(task_id: int):
+    contexts = load_contexts()
+    return contexts.get(str(task_id), {})
+
+@app.get("/api/tasks/questions")
+def get_context_questions_endpoint(domain: str, objective: str):
+    questions = get_context_questions(domain, objective)
+    return {"questions": questions}
+
+@app.post("/api/tasks/status")
+def update_task_status(update: TaskStatusUpdate):
+    allowed = {"needs-info", "ready", "in-progress", "completed"}
+    if update.status not in allowed:
+        raise HTTPException(status_code=400, detail=f"status must be one of {sorted(allowed)}")
+    contexts = load_contexts()
+    entry = contexts.get(str(update.task_id), {})
+    entry["status"] = update.status
+    if update.status == "needs-info":
+        entry.pop("answers", None)
+    entry.setdefault("timestamp", datetime.now().isoformat())
+    contexts[str(update.task_id)] = entry
+    save_contexts(contexts)
+    return {"ok": True, "status": update.status}
+
+@app.post("/api/tasks/smart-suggest")
+def smart_suggest_next_task():
+    focus = _focus_stats()
+    if focus["limit_reached"]:
+        return {
+            "action": "rest",
+            "message": "🛑 You've hit your 4-hour focus limit. Time to recharge.",
+            "reason": "Focus cap reached",
+        }
+
+    state = _load_active_tasks()
+    active = state["dataframe"]
+    contexts = state["contexts"]
+    payloads = _tasks_payload_list(active, contexts)
+
+    if not payloads:
+        return {
+            "action": "celebrate",
+            "message": "🎉 You've cleared your priority list!",
+            "reason": "No active tasks remain",
+        }
+
+    needs_context = [task for task in payloads if task["status"] == "needs-info"]
+    if needs_context:
+        task = needs_context[0]
+        return {
+            "action": "gather_context",
+            "task_id": task["id"],
+            "title": task["title"],
+            "message": f"Let's gather context for: {task['title']}",
+            "reason": "Highest priority task still needs context",
+        }
+
+    ready_tasks = [task for task in payloads if task["status"] in {"ready", "in-progress"}]
+    if not ready_tasks:
+        return {
+            "action": "celebrate",
+            "message": "🎉 You're clear for the day!",
+            "reason": "All tasks need context or are complete",
+        }
+
+    hour = datetime.now().hour
+    attention = ATTENTION.get("last", 0.5)
+
+    def pick_task(filter_fn):
+        for task in ready_tasks:
+            if filter_fn(task):
+                return task
+        return None
+
+    if 6 <= hour < 11 and attention > 0.65:
+        task = pick_task(lambda t: t.get("energy", "medium") == "high")
+        if task:
+            return {
+                "action": "start_task",
+                "task_id": task["id"],
+                "title": task["title"],
+                "message": f"🌅 Peak morning energy! Start: {task['title']}",
+                "reason": "High attention window for deep work",
+                "estimated_minutes": task.get("minutes", 60),
+            }
+
+    if attention < 0.5:
+        task = pick_task(lambda t: t.get("energy", "medium") == "low")
+        if task:
+            return {
+                "action": "start_task",
+                "task_id": task["id"],
+                "title": task["title"],
+                "message": f"🔋 Low energy? Try: {task['title']}",
+                "reason": "Lower focus required task recommended",
+                "estimated_minutes": task.get("minutes", 60),
+            }
+
+    task = ready_tasks[0]
+    return {
+        "action": "start_task",
+        "task_id": task["id"],
+        "title": task["title"],
+        "message": f"Next up: {task['title']}",
+        "reason": "Highest priority task that's ready",
+        "estimated_minutes": task.get("minutes", 60),
+    }
+
+@app.get("/api/tasks/actionability-check")
+def check_task_actionability():
+    state = _load_active_tasks()
+    active = state["dataframe"]
+    contexts = state["contexts"]
+    payloads = _tasks_payload_list(active, contexts)
+
+    report = {"ready": [], "needs_context": [], "in_progress": []}
+    for task in payloads:
+        entry = {
+            "id": task["id"],
+            "title": task["title"],
+            "domain": task.get("domain"),
+            "priority": task.get("priority"),
+        }
+        status = task.get("status")
+        if status == "in-progress":
+            report["in_progress"].append(entry)
+        elif status == "needs-info":
+            questions = task.get("context_questions") or []
+            if questions:
+                entry["missing_context"] = questions
+            report["needs_context"].append(entry)
+        else:
+            report["ready"].append(entry)
+    return report
+
 @app.get("/api/goals/categorize")
 def goals_categorize():
     df = load_goals()
@@ -167,30 +563,9 @@ def goals_categorize():
 
 @app.get("/api/nudge/next")
 def nudge_next():
-    df = categorize(load_goals())
-    att = ATTENTION.get("last", 0.5)
-    if att >= 0.6:
-        pref = ["Writing", "Career", "Learning", "Mental Health"]
-    elif att >= 0.35:
-        pref = ["Career", "Learning", "Writing", "Mental Health"]
-    else:
-        pref = ["Mental Health", "Writing", "Learning", "Career"]
-    if "status" not in df.columns:
-        df["status"] = "Backlog"
-    for cat in pref:
-        match = df[
-            df["categories"].str.contains(cat, na=False)
-            & (~df["status"].str.contains("Done", na=False))
-        ]
-        if not match.empty:
-            row = match.iloc[0]
-            return {
-                "attention": att,
-                "suggestion": row.get("task") or row.get("objective"),
-                "category": cat,
-                "reason": "Matches your current attention level",
-            }
-    return {"attention": att, "suggestion": "Review your backlog and pick one small task."}
+    suggestion = smart_suggest_next_task()
+    suggestion["attention"] = ATTENTION.get("last", 0.5)
+    return suggestion
 
 class CheckIn(BaseModel):
     task: str
