@@ -1,94 +1,77 @@
-# ShAgent / Better Self App
+# Better Self
 
-A self-optimization system that uses AI to help you. It allows you to set, dynamically aggregate, and achieve your goals, track mastery, focus deeply, and grow a personal knowledge graph. It works with Obsidian for writing and note-taking, and includes a schedule optimizer, agile rituals, and optional sensor-based feedback. Privacy first by default.
+An integrated ritual system that keeps Obsidian, a web “power tools” app, and a shared Supabase backend in sync. Start every day in your note, call on AI when it helps, track your focus in real time, and close the loop each evening.
 
-## Why this exists
+## Why It’s Different
+- **Temporal models over generic productivity** – choose the version of you the day requires (Researcher, Career Builder, Poet, Parent, …) and align tasks accordingly.
+- **Coherence first** – success is matching actions to values, not just checking boxes.
+- **Closed-loop feedback** – focus sessions pull lightweight sensor data and push stats back into your daily note.
+- **Single source of truth** – Supabase stores goals, tasks, sessions, and reflections for both the plugin and web app.
 
-- Motivation is most of the solution. We keep standards high and give strong support.
-- Closed-loop feedback grows skill. Measure state, act, reflect, adjust.
-- AI should amplify attention and effort, not replace them.
+## Feature Snapshot
+- **Obsidian Plugin**
+  - Morning check-in and evening review templates
+  - AI task generation that respects your temporal model, energy, and goals
+  - Quick links to start focus sessions or interview practice in the web app
+  - Supabase-backed goal/task sync
+- **Web App (Next.js)**
+  - Dashboard for launching focus, interview, schedule, and learning modes
+  - Focus Mode: camera on, timer running, real-time (simulated) focus score
+  - Interview Practice: record, transcribe (Whisper), score STAR coverage
+  - Schedule & Learning views (stubs ready to wire to Supabase + calendar)
+- **Supabase**
+  - Tables for temporal models, goals, tasks, focus sessions, interviews, daily logs, flashcards
+  - Migration script provided in `supabase/migrations/001_initial_schema.sql`
 
-## Features
-
-- **Goals and OKRs**: Dynamic objectives, key results, and skill trees.
-- **Schedule optimizer**: Plans blocks by priority, energy, and focus windows.
-- **Writing coach for Obsidian**: Six-layer analysis (grammar, clarity, style, content, audience or SEO, related exemplars) with inline highlights and quick fixes.
-- **Knowledge graph growth**: Auto-link notes and import Kindle highlights.
-- **Agile rituals**: Daily stand-in, weekly sprint plan, retro analytics.
-- **Feedback and sensors** (optional): Webcam and mic to estimate focus and stress. Built for low or no extra cost.
-
-## Architecture
-
+## Architecture At A Glance
 ```
-app/
-  core/
-    agent_pipeline.py      # goals -> tasks -> reflection loop
-    scheduler.py           # constraint-based scheduler
-    feedback_loop.py       # closed-loop learning and sensors
-    data_models.py         # goals, skills, states
-  integrations/
-    obsidian_plugin/       # TypeScript plugin for writing feedback
-    wearable_input/        # camera, mic, or watch hooks (optional)
-    kindle_ingest/         # import highlights
-  ui/
-    mobile/                # React Native or Flutter later
-    web/                   # basic web dashboard prototype
-  data/
-    sample_goals_public.csv
-    private_goals_template.csv  # ignored by git
-  config/
-    settings.yaml
-    prompts/               # LLM prompts
-```
+Obsidian Plugin (TypeScript)
+  ├─ Daily ritual commands
+  ├─ Supabase client
+  └─ Calls -> Web App API (AI task generation, focus/interview launch)
 
-See `docs/architecture.md` for diagrams and data flows.
+Web App / Next.js 14
+  ├─ /focus                Deep work mode with live stats
+  ├─ /interview            Behavioral practice w/ transcription + analysis
+  ├─ /schedule             Placeholder for calendar optimizer
+  ├─ /learn                Placeholder for spaced repetition
+  └─ /api/*                Task generation + interview analysis endpoints
 
-## Quick start
-
-### 1) Clone and set up
-```bash
-git clone https://github.com/Shaggstar/ShaGent.git
-cd ShaGent
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+Supabase (Postgres)
+  └─ goals, tasks, daily_logs, focus_sessions, interview_sessions, flashcards, ...
 ```
 
-### 2) Configure
-Edit `app/config/settings.yaml` to set your model provider and privacy options.
-- By default grammar and clarity run locally if you enable a small local model.
-- Style and content checks can use a hosted model if you choose.
+## Quick Start
+1. **Supabase** – Create a project, run the SQL in `supabase/migrations/001_initial_schema.sql`, and copy the project URL + anon key.
+2. **Web App** – `cd web-app && npm install && cp .env.local.example .env.local` → fill in Supabase and OpenAI keys → `npm run dev`.
+3. **Obsidian Plugin** – `cd obsidian-plugin && npm install && npm run dev`. Copy `main.js` + `manifest.json` to your vault’s `.obsidian/plugins/better-self/` folder, reload Obsidian, enable the plugin, and paste your Supabase credentials into settings.
+4. **Dogfood** – In Obsidian run “Better Self: Create Morning Check-In”, then “Generate Today’s Tasks”. Launch focus mode via the button—it opens http://localhost:3000/focus.
 
-### 3) Run the base loop
-```bash
-python scripts/run_agentic_loop.py
-```
+More detail lives in [SETUP.md](./SETUP.md). For automation, run `./quick-start.sh`.
 
-### 4) Install the Obsidian plugin
-Copy `app/integrations/obsidian_plugin` into your vault’s `.obsidian/plugins/` folder.
-Reload Obsidian and run **Analyze current note** from the command palette.
+## Workflow Loop
+1. **Morning (5 min)** – Choose temporal model, log energy/mood, let GPT-4 generate tasks, sync to calendar.
+2. **During Work** – Kick off focus blocks from the note → browser captures attention score → summary comes back later.
+3. **Practice / Power Sessions** – Launch interview drills or other modes in the web app; recordings + analysis live in Supabase.
+4. **Evening (5 min)** – Check off tasks, rate coherence, jot reflection + gratitude. Data updates dashboards automatically.
 
-## Low-cost defaults
+## Philosophy & References
+Built on:
+- Temporal Model Selection & Myth of Objectivity Hypothesis
+- Learning science: spaced repetition (Ebbinghaus), mastery learning (Bloom)
+- Focus research: ultradian rhythms (Rossi), attention drift (Csikszentmihalyi)
+- Habit formation: implementation intentions (Gollwitzer), Tiny Habits (Fogg)
 
-- Grammar and clarity: local model via `lmstudio` or `ollama` if you enable it.
-- Style, content, audience: one compact API call per note.
-- Sensors: webcam and mic only, no dedicated hardware required.
-
-## Privacy
-
-- Personal goals live in `app/data/private_goals_template.csv`, which git ignores.
-- You control all API calls in `config/models.yaml` and `config/settings.yaml`.
-- Everything works offline for core note-taking and planning.
-
-## Example goals
-
-See `app/data/sample_goals_public.csv` for a starting point. Replace with your own, and keep private copies in `app/data/private/` or in your vault.
+## Roadmap
+- **MVP (now)** – Daily rituals, AI tasks, focus mode, interview practice, baseline schema.
+- **Next** – Weekly retrospectives, Supabase-powered analytics dashboard, Google Calendar sync, richer spaced repetition.
+- **Later** – Mobile companion, accountability sharing, real CV-based focus tracking, multi-agent planning.
 
 ## Contributing
-
-1. Create a feature branch.
-2. Add tests in `tests/` if you change core logic.
-3. Open a PR with a short rationale.
+This repo is evolving fast. If you want to help:
+1. Fork the repo and branch from `main`.
+2. Keep changes scoped; add tests if you touch Python pipelines.
+3. Open a PR with context and screenshots/GIFs when relevant.
 
 ## License
-
-MIT
+MIT – use it, remix it, iterate on it.

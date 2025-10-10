@@ -1,1 +1,8 @@
 .venv/
+.env
+.env.local
+web-app/.env.local
+web-app/.env
+obsidian-plugin/node_modules
+web-app/node_modules
+*.log
